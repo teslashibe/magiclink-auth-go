@@ -8,7 +8,8 @@ Production-grade passwordless email auth for Go:
 - `net/http` handlers + middleware
 - Fiber adapter
 - PostgreSQL reference store
-- Resend email sender
+- Resend email sender (recommended default)
+- Drop-in senders for SES, SendGrid, Postmark, Mailgun, Brevo, SparkPost, and SMTP
 
 ## Install
 
@@ -20,7 +21,14 @@ go get github.com/teslashibe/magiclink-auth-go
 
 - `magiclink` (root): core service, net/http handlers, middleware
 - `pgstore`: PostgreSQL `CodeStore` + `UserStore`, embedded migrations
-- `resend`: Resend `EmailSender`
+- `resend`: Resend `EmailSender` (recommended default)
+- `ses`: AWS SES v2 sender
+- `sendgrid`: SendGrid sender
+- `postmark`: Postmark sender
+- `mailgun`: Mailgun sender
+- `brevo`: Brevo sender
+- `sparkpost`: SparkPost sender
+- `smtp`: plain SMTP sender
 - `fiberadapter`: Fiber handlers + middleware
 
 ## Quickstart (net/http)
@@ -119,6 +127,34 @@ Implement these to customize behavior:
 - `magiclink.EmailRenderer`
 
 This keeps the core service framework- and provider-agnostic.
+
+## Email Provider Drop-ins
+
+`magiclink-auth-go` works with any provider implementing `magiclink.EmailSender`.
+
+### Recommended default
+
+- `resend.New(apiKey, fromAddress)`
+
+### Built-in drop-in senders
+
+- AWS SES: `ses.NewFromConfig(awsCfg, fromAddress)` or `ses.New(client, fromAddress)`
+- SendGrid: `sendgrid.New(apiKey, fromAddress)`
+- Postmark: `postmark.New(serverToken, fromAddress)`
+- Mailgun: `mailgun.New(apiKey, domain, fromAddress)`
+- Brevo: `brevo.New(apiKey, fromAddress)`
+- SparkPost: `sparkpost.New(apiKey, fromAddress)`
+- Plain SMTP: `smtp.New(addr, username, password, fromAddress)`
+
+Example swap (SendGrid instead of Resend):
+
+```go
+import "github.com/teslashibe/magiclink-auth-go/sendgrid"
+
+emailSender := sendgrid.New(os.Getenv("SENDGRID_API_KEY"), "MyApp <noreply@myapp.com>")
+
+svc := magiclink.New(cfg, codeStore, userStore, emailSender, nil)
+```
 
 ## HTTP API
 
